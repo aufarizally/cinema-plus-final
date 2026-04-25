@@ -5,6 +5,9 @@ import { IconButton } from '@material-ui/core';
 import { ArrowBack as ArrowBackIcon } from '@material-ui/icons';
 import LoginForm from './components/LoginForm';
 
+// 1. Import Google Login
+import { GoogleLogin } from '@react-oauth/google';
+
 const styles = theme => ({
   root: {
     backgroundColor: theme.palette.background.default,
@@ -39,18 +42,27 @@ const styles = theme => ({
     display: 'flex',
     alignItems: 'center',
     paddingTop: theme.spacing(5),
-    paddingBototm: theme.spacing(2),
+    paddingBottom: theme.spacing(2),
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2)
   },
-
   contentBody: {
     flexGrow: 1,
     display: 'flex',
+    flexDirection: 'column', // Ubah ke column supaya tombol Google ada di bawah form
+    justifyContent: 'center',
     alignItems: 'center',
     [theme.breakpoints.down('md')]: {
       justifyContent: 'center'
     }
+  },
+  // Style tambahan untuk pembungkus tombol Google
+  googleWrapper: {
+    marginTop: theme.spacing(3),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px'
   }
 });
 
@@ -58,6 +70,16 @@ class Login extends Component {
   handleBack = () => {
     const { history } = this.props;
     history.goBack();
+  };
+
+  // 2. Fungsi handle untuk Google
+  handleGoogleSuccess = (credentialResponse) => {
+    console.log("Token Google Berhasil Didapat:", credentialResponse.credential);
+    // Nanti kita akan buat logic kirim ke Backend di sini
+  };
+
+  handleGoogleError = () => {
+    console.log("Login Google Gagal");
   };
 
   render() {
@@ -77,7 +99,19 @@ class Login extends Component {
               </IconButton>
             </div>
             <div className={classes.contentBody}>
+              {/* Form Login Biasa */}
               <LoginForm redirect />
+
+              {/* 3. Tombol Google Login */}
+              <div className={classes.googleWrapper}>
+                <p style={{ color: '#666', fontSize: '14px' }}>Atau masuk lebih cepat:</p>
+                <GoogleLogin
+                  onSuccess={this.handleGoogleSuccess}
+                  onError={this.handleGoogleError}
+                  theme="filled_blue"
+                  shape="pill"
+                />
+              </div>
             </div>
           </Grid>
         </Grid>

@@ -85,13 +85,14 @@ export const facebookLogin = e => async dispatch => {
   }
 };
 
-export const googleLogin = ({ profileObj }) => async dispatch => {
+// PERBAIKAN GOOGLE LOGIN (VERSI BARU)
+export const googleLogin = (accessToken) => async dispatch => {
   try {
-    const { email, googleId, name } = profileObj;
     const options = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, googleId, name })
+      // Kita kirim accessToken hasil dari @react-oauth/google
+      body: JSON.stringify({ accessToken })
     };
     const url = '/users/login/google';
     const response = await fetch(url, options);
@@ -102,10 +103,11 @@ export const googleLogin = ({ profileObj }) => async dispatch => {
       user && setUser(user);
       dispatch({ type: LOGIN_SUCCESS, payload: responseData });
       dispatch(setAlert(`Welcome ${user.name}`, 'success', 5000));
-    }
-    if (responseData.error) {
+    } else {
       dispatch({ type: LOGIN_FAIL });
-      dispatch(setAlert(responseData.error.message, 'error', 5000));
+      // Jika responseData.error ada, pakai itu, jika tidak pakai pesan default
+      const errorMsg = responseData.error ? responseData.error.message : 'Google Login Failed';
+      dispatch(setAlert(errorMsg, 'error', 5000));
     }
   } catch (error) {
     dispatch({ type: LOGIN_FAIL });

@@ -17,24 +17,29 @@ router.post('/cinemas', auth.enhance, async (req, res) => {
   }
 });
 
+// Update Cinema Photo (PERBAIKAN DI SINI)
 router.post('/cinemas/photo/:id', upload('cinemas').single('file'), async (req, res, next) => {
   const url = `${req.protocol}://${req.get('host')}`;
   const { file } = req;
-  const movieId = req.params.id;
+  const cinemaId = req.params.id; // Diubah namanya dari movieId ke cinemaId supaya jelas
+
   try {
     if (!file) {
-      const error = new Error('Please upload a file');
-      error.httpStatusCode = 400;
-      return next(error);
+      return res.status(400).send({ error: 'Please upload a file' });
     }
-    const cinema = await Cinema.findById(movieId);
+
+    const cinema = await Cinema.findById(cinemaId);
     if (!cinema) return res.sendStatus(404);
-    cinema.image = `${url}/${file.path}`;
+
+    // KUNCI PERBAIKAN: Gunakan file.filename, bukan file.path
+    // Agar hasilnya: http://localhost:5000/uploads/cinemas/namafile.jpg
+    cinema.image = `${url}/uploads/cinemas/${file.filename}`;
+
     await cinema.save();
     res.send({ cinema, file });
   } catch (e) {
     console.log(e);
-    res.sendStatus(400).send(e);
+    res.status(400).send(e);
   }
 });
 
@@ -71,9 +76,10 @@ router.patch('/cinemas/:id', auth.enhance, async (req, res) => {
 
   try {
     const cinema = await Cinema.findById(_id);
+    if (!cinema) return res.sendStatus(404);
+
     updates.forEach((update) => (cinema[update] = req.body[update]));
     await cinema.save();
-    if (!cinema) return res.sendStatus(404);
     return res.send(cinema);
   } catch (e) {
     return res.status(400).send(e);
@@ -92,7 +98,7 @@ router.delete('/cinemas/:id', auth.enhance, async (req, res) => {
   }
 });
 
-// Cinema User modeling (GET ALL CINEMAS)
+// Cinema User modeling
 router.get('/cinemas/usermodeling/:username', async (req, res) => {
   const { username } = req.params;
   try {

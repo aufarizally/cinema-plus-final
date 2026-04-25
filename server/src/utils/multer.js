@@ -1,26 +1,34 @@
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
-const storage = path =>
+const storage = (subFolder) =>
   multer.diskStorage({
-    destination: './uploads/' + path,
+    destination: (req, file, cb) => {
+      // Kita tentukan folder uploads relatif terhadap file ini berada
+      // src/utils -> naik 2 kali ke server/uploads
+      const finalDir = path.join(__dirname, '../../uploads', subFolder);
+
+      // Buat folder jika belum ada
+      if (!fs.existsSync(finalDir)) {
+        fs.mkdirSync(finalDir, { recursive: true });
+      }
+      
+      cb(null, finalDir);
+    },
     filename: (req, file, cb) => {
       cb(null, `${Date.now()}-${file.originalname}`);
     },
   });
 
-const upload = path =>
+const upload = (subFolder) =>
   multer({
-    storage: storage(path),
+    storage: storage(subFolder),
     fileFilter: (req, file, cb) => {
-      if (
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        file.mimetype === 'image/jpeg'
-      ) {
+      if (file.mimetype.startsWith('image/')) {
         cb(null, true);
       } else {
-        cb(null, false);
-        return cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+        cb(new Error('Hanya boleh upload gambar!'), false);
       }
     },
   });

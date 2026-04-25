@@ -4,7 +4,8 @@ const User = require('../models/user');
 const simple = async (req, res, next) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '');
-    const decoded = jwt.verify(token, 'mySecret');
+    // Pakai process.env agar konek ke file .env kamu
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mySecret');
     const user = await User.findOne({
       _id: decoded._id,
       'tokens.token': token,
@@ -21,12 +22,13 @@ const simple = async (req, res, next) => {
 const enhance = async (req, res, next) => {
   try {
     const token = req.header('Authorization').replace('Bearer ', '');
-    const decoded = jwt.verify(token, 'mySecret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mySecret');
     const user = await User.findOne({
       _id: decoded._id,
       'tokens.token': token,
     });
-    if (!user || user.role !== 'superadmin') throw new Error();
+    // KITA UBAH DISINI: admin juga boleh lewat, nggak harus superadmin
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) throw new Error();
     req.token = token;
     req.user = user;
     next();
