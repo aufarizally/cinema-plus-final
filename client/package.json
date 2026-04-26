@@ -38,14 +38,13 @@
     "uuid": "3.3.3"
   },
   "scripts": {
-    "clean": "rm -rf node_modules/ && npm cache clean",
     "start": "react-scripts start",
     "build": "export NODE_OPTIONS=--openssl-legacy-provider && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "eslintConfig": {
     "extends": "react-app"
