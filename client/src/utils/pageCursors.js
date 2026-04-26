@@ -14,6 +14,6 @@ const pageCursors = () => {
       cursor3.style.left = event.clientX + 'px';
       cursor3.style.top = event.clientY + 'px';
     });
-};
+}; 
 
 export default pageCursors;
