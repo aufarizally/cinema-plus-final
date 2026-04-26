@@ -10,11 +10,15 @@ import {
 import { setAlert } from './alert';
 import { setAuthHeaders, setUser, removeUser, isLoggedIn } from '../../utils';
 
+// AMBIL URL DARI ENV VERCEL
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 export const uploadImage = (id, image) => async dispatch => {
   try {
     const data = new FormData();
     data.append('file', image);
-    const url = '/users/photo/' + id;
+    // GUNAKAN API_URL
+    const url = API_URL + '/users/photo/' + id;
     const response = await fetch(url, {
       method: 'POST',
       body: data
@@ -34,7 +38,8 @@ export const uploadImage = (id, image) => async dispatch => {
 // Login user
 export const login = (username, password) => async dispatch => {
   try {
-    const url = '/users/login';
+    // GUNAKAN API_URL
+    const url = API_URL + '/users/login';
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -65,7 +70,8 @@ export const facebookLogin = e => async dispatch => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, userID, name })
     };
-    const url = '/users/login/facebook';
+    // GUNAKAN API_URL
+    const url = API_URL + '/users/login/facebook';
     const response = await fetch(url, options);
     const responseData = await response.json();
 
@@ -85,16 +91,16 @@ export const facebookLogin = e => async dispatch => {
   }
 };
 
-// PERBAIKAN GOOGLE LOGIN (VERSI BARU)
+// PERBAIKAN GOOGLE LOGIN
 export const googleLogin = (accessToken) => async dispatch => {
   try {
     const options = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // Kita kirim accessToken hasil dari @react-oauth/google
       body: JSON.stringify({ accessToken })
     };
-    const url = '/users/login/google';
+    // GUNAKAN API_URL
+    const url = API_URL + '/users/login/google';
     const response = await fetch(url, options);
     const responseData = await response.json();
 
@@ -105,7 +111,6 @@ export const googleLogin = (accessToken) => async dispatch => {
       dispatch(setAlert(`Welcome ${user.name}`, 'success', 5000));
     } else {
       dispatch({ type: LOGIN_FAIL });
-      // Jika responseData.error ada, pakai itu, jika tidak pakai pesan default
       const errorMsg = responseData.error ? responseData.error.message : 'Google Login Failed';
       dispatch(setAlert(errorMsg, 'error', 5000));
     }
@@ -125,7 +130,8 @@ export const register = ({
   password
 }) => async dispatch => {
   try {
-    const url = '/users';
+    // GUNAKAN API_URL
+    const url = API_URL + '/users';
     const body = { name, username, email, phone, password };
     const response = await fetch(url, {
       method: 'POST',
@@ -136,7 +142,7 @@ export const register = ({
     if (response.ok) {
       const { user } = responseData;
       user && setUser(user);
-      if (image) dispatch(uploadImage(user._id, image)); // Upload image
+      if (image) dispatch(uploadImage(user._id, image)); 
       dispatch({ type: REGISTER_SUCCESS, payload: responseData });
       dispatch(setAlert('Register Success', 'success', 5000));
     }
@@ -154,7 +160,8 @@ export const register = ({
 export const loadUser = () => async dispatch => {
   if (!isLoggedIn()) return;
   try {
-    const url = '/users/me';
+    // GUNAKAN API_URL
+    const url = API_URL + '/users/me';
     const response = await fetch(url, {
       method: 'GET',
       headers: setAuthHeaders()
@@ -175,7 +182,8 @@ export const loadUser = () => async dispatch => {
 export const logout = () => async dispatch => {
   try {
     const token = localStorage.getItem('jwtToken');
-    const url = '/users/logout';
+    // GUNAKAN API_URL
+    const url = API_URL + '/users/logout';
     const response = await fetch(url, {
       method: 'POST',
       headers: {
