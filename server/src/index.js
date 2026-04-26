@@ -6,7 +6,7 @@ const fs = require('fs');
 // Koneksi ke Database Cloud (MongoDB Atlas)
 require('./db/mongoose');
 
-// Routes
+// Import Routes
 const userRouter = require('./routes/users');
 const movieRouter = require('./routes/movies');
 const cinemaRouter = require('./routes/cinema');
@@ -17,14 +17,13 @@ const invitationsRouter = require('./routes/invitations');
 const app = express();
 app.disable('x-powered-by');
 
-// PORT diambil dari .env, kalau tidak ada pakai 5000
 const port = process.env.PORT || 5000;
 
 // --- 1. MIDDLEWARE DASAR & CORS FIX ---
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.use(function(req, res, next) {
-  // Masukkan link frontend Vercel kamu di sini
   const allowedOrigins = [
     'https://cinema-plus-app.vercel.app', 
     'http://localhost:3000'
@@ -40,10 +39,8 @@ app.use(function(req, res, next) {
     'Access-Control-Allow-Headers',
     'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Access-Token'
   );
-  // Penting agar data login (Cookies/Token) bisa lewat
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   
-  // Tangani pre-flight request untuk browser modern
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -54,20 +51,19 @@ app.use(function(req, res, next) {
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
-console.log("INFO: Folder uploads dibaca dari:", uploadsPath);
-
 const buildPath = path.join(__dirname, '../../client/build');
 if (fs.existsSync(buildPath)) {
     app.use(express.static(buildPath));
 }
 
-// --- 3. ROUTES API ---
-app.use(userRouter);
-app.use(movieRouter);
-app.use(cinemaRouter);
-app.use(showtimeRouter);
-app.use(reservationRouter);
-app.use(invitationsRouter);
+// --- 3. ROUTES API (DENGAN AWALAN /API) ---
+// Ini kunci supaya tidak 405 Method Not Allowed
+app.use('/api', userRouter);
+app.use('/api', movieRouter);
+app.use('/api', cinemaRouter);
+app.use('/api', showtimeRouter);
+app.use('/api', reservationRouter);
+app.use('/api', invitationsRouter);
 
 // --- 4. CATCHALL HANDLER ---
 app.get('/*', (req, res) => {
@@ -76,15 +72,15 @@ app.get('/*', (req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    if (req.url.startsWith('/uploads')) {
-        return res.status(404).send('File gambar tidak ditemukan di folder fisik server.');
+    // Jika rute API salah tapi dipanggil lewat GET
+    if (req.url.startsWith('/api')) {
+        return res.status(404).json({ error: "API Route not found" });
     }
-
-    res.status(404).send({
-      error: "Frontend build not found",
-      message: "Server is running. Jika sedang coding (dev mode), abaikan pesan ini."
+    res.status(404).json({
+      error: "Not Found",
+      message: "Server is running. Endpoint tidak ditemukan."
     });
   }
 });
 
-app.listen(port, () => console.log(`🚀 Server CinemaPlus aktif di PORT: ${port}`));
+app.listen(port, () => console.log(`🚀 Server aktif di PORT: ${port}`));
