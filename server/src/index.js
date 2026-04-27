@@ -17,8 +17,6 @@ const invitationsRouter = require('./routes/invitations');
 const app = express();
 app.disable('x-powered-by');
 
-const port = process.env.PORT || 5000;
-
 // --- 1. MIDDLEWARE DASAR & CORS FIX ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -26,12 +24,16 @@ app.use(express.urlencoded({ extended: false }));
 app.use(function(req, res, next) {
   const allowedOrigins = [
     'https://cinema-plus-app.vercel.app', 
+    'https://cinema-plus-final.vercel.app', // Tambahan URL prod lu
     'http://localhost:3000'
   ];
   const origin = req.headers.origin;
   
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    // Fallback biar aman kalau origin gak kedeteksi
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
   
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
@@ -51,13 +53,7 @@ app.use(function(req, res, next) {
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
-const buildPath = path.join(__dirname, '../../client/build');
-if (fs.existsSync(buildPath)) {
-    app.use(express.static(buildPath));
-}
-
 // --- 3. ROUTES API (DENGAN AWALAN /API) ---
-// Ini kunci supaya tidak 405 Method Not Allowed
 app.use('/api', userRouter);
 app.use('/api', movieRouter);
 app.use('/api', cinemaRouter);
@@ -67,20 +63,25 @@ app.use('/api', invitationsRouter);
 
 // --- 4. CATCHALL HANDLER ---
 app.get('/*', (req, res) => {
-  const indexPath = path.join(__dirname, '../../client/build/index.html');
-  
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    // Jika rute API salah tapi dipanggil lewat GET
-    if (req.url.startsWith('/api')) {
-        return res.status(404).json({ error: "API Route not found" });
-    }
-    res.status(404).json({
-      error: "Not Found",
-      message: "Server is running. Endpoint tidak ditemukan."
-    });
+  // Jika rute API salah tapi dipanggil lewat GET
+  if (req.url.startsWith('/api')) {
+      return res.status(404).json({ error: "API Route not found" });
   }
+  
+  // Respon standar buat ngecek server idup
+  res.status(200).json({
+    status: "Success",
+    message: "Server Cinema Plus is running!",
+    timestamp: new Date()
+  });
 });
 
-app.listen(port, () => console.log(`🚀 Server aktif di PORT: ${port}`));
+// --- 5. EXPORT FOR VERCEL ---
+// PENTING: module.exports harus ada supaya Vercel bisa jalanin Express-nya
+module.exports = app;
+
+// Tetap pakai listen buat local development (gak ganggu Vercel)
+const port = process.env.PORT || 5000;
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => console.log(`🚀 Server aktif di PORT: ${port}`));
+}
