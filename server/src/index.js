@@ -1,7 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
+const cors = require('cors'); // Kita pakai package cors biar lebih stabil
 
 // Koneksi ke Database Cloud (MongoDB Atlas)
 require('./db/mongoose');
@@ -17,31 +17,15 @@ const invitationsRouter = require('./routes/invitations');
 const app = express();
 app.disable('x-powered-by');
 
-// --- 1. MIDDLEWARE DASAR & CORS FIX ---
+// --- 1. MIDDLEWARE DASAR & CORS (VERSI BARBAR) ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use(function(req, res, next) {
-  const allowedOrigins = [
-    'https://cinema-plus-app.vercel.app', 
-    'https://cinema-plus-final.vercel.app', // Tambahan URL prod lu
-    'http://localhost:3000'
-  ];
-  const origin = req.headers.origin;
-  
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    // Fallback biar aman kalau origin gak kedeteksi
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Access-Token'
-  );
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+// Ini kunci bantai error CORS lu, Aufa!
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Access-Token');
   
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
@@ -53,35 +37,21 @@ app.use(function(req, res, next) {
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
-// --- 3. ROUTES API (DENGAN AWALAN /API) ---
+// --- 3. ROUTES API ---
 app.use('/api', userRouter);
 app.use('/api', movieRouter);
-app.use('/api', cinemaRouter);
+app.use('/api/cinemas', cinemaRouter); // Pastikan path ini sesuai dengan frontend
 app.use('/api', showtimeRouter);
 app.use('/api', reservationRouter);
 app.use('/api', invitationsRouter);
 
-// --- 4. CATCHALL HANDLER ---
+// --- 4. CATCHALL ---
 app.get('/*', (req, res) => {
-  // Jika rute API salah tapi dipanggil lewat GET
   if (req.url.startsWith('/api')) {
       return res.status(404).json({ error: "API Route not found" });
   }
-  
-  // Respon standar buat ngecek server idup
-  res.status(200).json({
-    status: "Success",
-    message: "Server Cinema Plus is running!",
-    timestamp: new Date()
-  });
+  res.status(200).json({ status: "Success", message: "Server is Running!" });
 });
 
-// --- 5. EXPORT FOR VERCEL ---
-// PENTING: module.exports harus ada supaya Vercel bisa jalanin Express-nya
+// --- 5. EXPORT ---
 module.exports = app;
-
-// Tetap pakai listen buat local development (gak ganggu Vercel)
-const port = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(port, () => console.log(`🚀 Server aktif di PORT: ${port}`));
-}
